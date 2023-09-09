@@ -12,6 +12,8 @@ network.hostname("PicoDexter")
 network.country("TH")
 
 display = util.get_display()
+rotation = 180 if display.pressed(badger2040.BUTTON_DOWN) else 0
+util.rotate_display(rotation)
 
 WIDTH, HEIGHT = (296, 128)
 FONT_SIZE = 2
@@ -139,11 +141,14 @@ def update_time(seconds_since, do_update=True):
     clear()
     text_center(f"{rjust(seconds_since // 60, 2, '0')}m {rjust(seconds_since % 60, 2, '0')}s", 2, 105)
     max_width = display.measure_text("00m 00s", 2)
-    if do_update:
-        display.partial_update(WIDTH // 2 - max_width // 2, 104, max_width, 16)
+    # if do_update:
+    #     if rotation == 180:
+    #         display.partial_update(WIDTH // 2 - max_width // 2, HEIGHT - 104 - 16, max_width, 16)
+    #     else:
+    #         display.partial_update(WIDTH // 2 - max_width // 2, 104, max_width, 16)
 
 
-def run():
+def run(force_update=False):
     global last_run, last_value
 
     if last_value == 0:
@@ -159,10 +164,15 @@ def run():
     value : float = data["value"]
     date = time.localtime(int(data["date"] / 1000.0) + TIME_OFFSET)
 
-    if last_run == data["date"]:
-        print("Skipping Run")
-        update_time(time.time() - last_run // 1000, True)
-        return
+    display.set_update_speed(badger2040.UPDATE_TURBO)
+
+    if last_run == data["date"] and not force_update:
+        # print("Skipping Run")
+        # update_time(time.time() - last_run // 1000, True)
+        # return
+        display.set_update_speed(badger2040.UPDATE_TURBO)
+    else:
+        display.set_update_speed(badger2040.UPDATE_MEDIUM)
     
     update_time(time.time() - last_run // 1000, False)
     
@@ -184,9 +194,13 @@ def run():
 
 while True:
     display.keepalive()
-    run()
-    if display.pressed(badger2040.BUTTON_UP) and __name__ != "__main__":
-        raise Exception("Test Exception")
+    if __name__ != "__main__":
+        if display.pressed(badger2040.BUTTON_UP):
+            raise Exception("Test Exception")
+        elif display.pressed(badger2040.BUTTON_DOWN):
+            rotation = 180 if rotation == 0 else 0
+            util.rotate_display(rotation)
+    run(force_update=display.pressed(badger2040.BUTTON_DOWN) or display.pressed(badger2040.BUTTON_B))
     wait_loop()
     display.halt()
 

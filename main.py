@@ -13,6 +13,7 @@ while True:
 
         buff = io.StringIO()
         usys.print_exception(e, buff)
+        print(buff.getvalue())
         display.set_pen(15)
         display.clear()
         display.set_pen(0)
