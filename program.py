@@ -9,7 +9,7 @@ import random
 import network
 
 network.hostname("PicoDexter")
-network.country("AU")
+network.country("TH")
 
 display = util.get_display()
 
@@ -29,6 +29,20 @@ def clear():
     background()
     display.clear()
     foreground()
+
+def rjust(text, length : int, fill : str):
+    text = str(text)
+    if len(text) >= length: return text
+    else: return fill * (length - len(text)) + text
+
+def ljust(text, length : int, fill : str):
+    text = str(text)
+    if len(text) >= length: return text
+    else: return text + fill * (length - len(text))
+
+def dateToStr(d : tuple[int, int, int, int, int, int, int, int]):
+    year, month, day, hour, minute, second, dow, doy = d
+    return f"{hour}:{minute}:{second} {day}/{month}/{year}"
 
 # for i, ap in enumerate(scan_aps()):
 #     display.text(ap, 10, 45 + i * 15, scale=1.5)
@@ -53,13 +67,19 @@ def progress_bar(thickness, perc):
     )
     foreground()
 
-progress_bar(4, 1 / 3)    
+progress_bar(4, 0)    
 display.text("WiFi", 10, 10, 256, 4)
 from WIFI_CONFIG import SSID
-display.text(SSID, 10, HEIGHT // 2 + 15 + 5, scale=2)
+display.text(f"SSID = {SSID}", 10, HEIGHT // 2 + 15 + 5, scale=2)
 display.update()
 
 display.connect(status_handler=None)  # type: ignore
+
+progress_bar(4, 1/3)
+display.text("IP = " + str(display.ip_address()), 10, HEIGHT // 2 + 45, scale=2)
+display.update()
+
+time.sleep(2)
 
 clear()
 progress_bar(4, 2 / 3) 
@@ -75,10 +95,12 @@ rtc.clear_alarm_flag()
 ntptime.settime()
 badger2040.pico_rtc_to_pcf() #type: ignore
 
-print("[BOOT] Finished")
-clear()
 progress_bar(4, 1)
+display.text(dateToStr(time.localtime(time.time() + TIME_OFFSET)), 10, HEIGHT // 2 + 45, scale=2) # type: ignore
 display.update()
+time.sleep(2)
+
+print("[BOOT] Finished")
 display.set_update_speed(badger2040.UPDATE_FAST)
 
 
@@ -92,9 +114,7 @@ def wait_loop():
     rtc.set_alarm(asecond, aminute, ahour, aday)
     rtc.enable_alarm_interrupt(True)
 
-def dateToStr(d : tuple[int, int, int, int, int, int, int, int]):
-    year, month, day, hour, minute, second, dow, doy = d
-    return f"{hour}:{minute}:{second} {day}/{month}/{year}"
+
 
 
 def text_center(text, size : float, y : int, fixed_width = False):
@@ -103,15 +123,7 @@ def text_center(text, size : float, y : int, fixed_width = False):
     display.text(text, int(WIDTH / 2 - w / 2), y, WIDTH, size, fixed_width=fixed_width)
     return w
 
-def rjust(text, length : int, fill : str):
-    text = str(text)
-    if len(text) >= length: return text
-    else: return fill * (length - len(text)) + text
 
-def ljust(text, length : int, fill : str):
-    text = str(text)
-    if len(text) >= length: return text
-    else: return text + fill * (length - len(text))
 
 def format_time(date : tuple[int, int, int, int, int, int, int, int]) -> str:
     hour = date[3] % 12
@@ -164,7 +176,7 @@ def run():
     # text_center(trend, 2.5, 80)
     text_center(f"{trend} ({'+' if diff >= 0 else ''}{round(diff, 2)})", 2.5, 70)
 
-    # text_center(format_time(date), 2, 95)
+    # text_center(format_time(date), 2, 95) # type: ignore
 
     last_value = value
     display.update()
@@ -173,6 +185,8 @@ def run():
 while True:
     display.keepalive()
     run()
+    if display.pressed(badger2040.BUTTON_UP) and __name__ != "__main__":
+        raise Exception("Test Exception")
     wait_loop()
     display.halt()
 
