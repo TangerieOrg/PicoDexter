@@ -1,3 +1,5 @@
+import WIFI_CONFIG
+WIFI_CONFIG.configure()
 while True:
     try:
         import program

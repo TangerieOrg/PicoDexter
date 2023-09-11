@@ -33,7 +33,7 @@ class WLAN():
         """
         ...
 
-    def config(self, parameter:str="config('ssid') for example", mac: Optional[bytes] = None, essid: Optional[str] =None, ssid: Optional[str]=None, channel: Optional[int] =None, security: Optional[int]=None, key: Optional[str]=None, password: Optional[str]=None, txpower: Optional[Union[int, float]] =None) -> None:
+    def config(self, parameter:str="config('ssid') for example", mac: Optional[bytes] = None, essid: Optional[str] =None, ssid: Optional[str]=None, channel: Optional[int] =None, security: Optional[int]=None, key: Optional[str]=None, password: Optional[str]=None, txpower: Optional[Union[int, float]] =None, pm: Optional[int]=None) -> None:
         """DOT NOT USE config(paramter=...) this is just for config('...') to work
 
         Get or set general network interface parameters. 

@@ -12,7 +12,7 @@ network.hostname("PicoDexter")
 network.country("TH")
 
 display = util.get_display()
-rotation = 180 if display.pressed(badger2040.BUTTON_DOWN) else 0
+rotation = 180 if not display.pressed(badger2040.BUTTON_DOWN) else 0
 util.rotate_display(rotation)
 
 WIDTH, HEIGHT = (296, 128)
@@ -71,8 +71,8 @@ def progress_bar(thickness, perc):
 
 progress_bar(4, 0)    
 display.text("WiFi", 10, 10, 256, 4)
-from WIFI_CONFIG import SSID
-display.text(f"SSID = {SSID}", 10, HEIGHT // 2 + 15 + 5, scale=2)
+import WIFI_CONFIG
+display.text(f"SSID = {WIFI_CONFIG.SSID}", 10, HEIGHT // 2 + 15 + 5, scale=2)
 display.update()
 
 display.connect(status_handler=None)  # type: ignore
