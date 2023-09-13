@@ -69,38 +69,42 @@ def progress_bar(thickness, perc):
     )
     foreground()
 
-progress_bar(4, 0)    
-display.text("WiFi", 10, 10, 256, 4)
-import WIFI_CONFIG
-display.text(f"SSID = {WIFI_CONFIG.SSID}", 10, HEIGHT // 2 + 15 + 5, scale=2)
-display.update()
-
-display.connect(status_handler=None)  # type: ignore
-
-progress_bar(4, 1/3)
-display.text("IP = " + str(display.ip_address()), 10, HEIGHT // 2 + 45, scale=2)
-display.update()
-
-time.sleep(2)
-
-clear()
-progress_bar(4, 2 / 3) 
-display.text("Clock", 10, 10, 256, 4)
-display.update()
-
 i2c = machine.I2C(0)
 rtc = pcf85063a.PCF85063A(i2c) # type: ignore
 i2c.writeto_mem(0x51, 0x00, b'\x00')  # ensure rtc is running (this should be default?)
 rtc.enable_timer_interrupt(False)
 rtc.clear_alarm_flag()
 
-ntptime.settime()
-badger2040.pico_rtc_to_pcf() #type: ignore
+was_connected = display.get_network_manager().isconnected()
+if not was_connected:
+    progress_bar(4, 0)    
+    display.text("WiFi", 10, 10, 256, 4)
+    import WIFI_CONFIG
+    display.text(f"SSID = {WIFI_CONFIG.SSID}", 10, HEIGHT // 2 + 15 + 5, scale=2)
+    display.update()
 
-progress_bar(4, 1)
-display.text(dateToStr(time.localtime(time.time() + TIME_OFFSET)), 10, HEIGHT // 2 + 45, scale=2) # type: ignore
-display.update()
-time.sleep(2)
+    display.connect(status_handler=None)  # type: ignore
+
+    progress_bar(4, 1/3)
+    display.text("IP = " + str(display.ip_address()), 10, HEIGHT // 2 + 45, scale=2)
+    display.update()
+
+    time.sleep(2)
+
+    clear()
+    progress_bar(4, 2 / 3) 
+    display.text("Clock", 10, 10, 256, 4)
+    display.update()
+
+    try:
+        ntptime.settime()
+        badger2040.pico_rtc_to_pcf() #type: ignore
+    except: pass    
+
+    progress_bar(4, 1)
+    display.text(dateToStr(time.localtime(time.time() + TIME_OFFSET)), 10, HEIGHT // 2 + 45, scale=2) # type: ignore
+    display.update()
+    time.sleep(2)
 
 print("[BOOT] Finished")
 display.set_update_speed(badger2040.UPDATE_FAST)
@@ -115,8 +119,6 @@ def wait_loop():
     rtc.clear_alarm_flag()
     rtc.set_alarm(asecond, aminute, ahour, aday)
     rtc.enable_alarm_interrupt(True)
-
-
 
 
 def text_center(text, size : float, y : int, fixed_width = False):
@@ -140,13 +142,6 @@ last_value = 0
 def update_time(seconds_since, do_update=True):
     clear()
     text_center(f"{rjust(seconds_since // 60, 2, '0')}m {rjust(seconds_since % 60, 2, '0')}s", 2, 105)
-    max_width = display.measure_text("00m 00s", 2)
-    # if do_update:
-    #     if rotation == 180:
-    #         display.partial_update(WIDTH // 2 - max_width // 2, HEIGHT - 104 - 16, max_width, 16)
-    #     else:
-    #         display.partial_update(WIDTH // 2 - max_width // 2, 104, max_width, 16)
-
 
 def run(force_update=False):
     global last_run, last_value
@@ -155,7 +150,7 @@ def run(force_update=False):
         readings = urequests.get("http://tangerie.xyz/dexter/api/glucose/ten").json()
         prev = readings[-2]
         last_value = prev["value"]
-        last_run = readings[-1]["date"] - 1 
+        last_run = readings[-1]["date"]
 
 
     data = urequests.get("http://tangerie.xyz/dexter/api/glucose/current").json()
@@ -166,17 +161,15 @@ def run(force_update=False):
 
     display.set_update_speed(badger2040.UPDATE_TURBO)
 
-    if last_run == data["date"] and not force_update:
-        # print("Skipping Run")
-        # update_time(time.time() - last_run // 1000, True)
-        # return
+    has_changed = last_run != data["date"]
+
+    if not has_changed and not force_update:
         display.set_update_speed(badger2040.UPDATE_TURBO)
     else:
         display.set_update_speed(badger2040.UPDATE_MEDIUM)
     
     update_time(time.time() - last_run // 1000, False)
     
-
     last_run = data["date"]
     v_w = text_center(value, 5, 10)
     display.text("mmol/L", int(WIDTH / 2 + v_w / 2) + 5, 30, WIDTH, 2)
@@ -187,8 +180,8 @@ def run(force_update=False):
     text_center(f"{trend} ({'+' if diff >= 0 else ''}{round(diff, 2)})", 2.5, 70)
 
     # text_center(format_time(date), 2, 95) # type: ignore
-
-    last_value = value
+    if has_changed:
+        last_value = value
     display.update()
 
 

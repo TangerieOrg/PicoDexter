@@ -42,18 +42,19 @@ SYSTEM_FREQS = [
     250000000
 ]
 
-BUTTONS = {
-    BUTTON_DOWN: machine.Pin(BUTTON_DOWN, machine.Pin.IN, machine.Pin.PULL_DOWN),
-    BUTTON_A: machine.Pin(BUTTON_A, machine.Pin.IN, machine.Pin.PULL_DOWN),
-    BUTTON_B: machine.Pin(BUTTON_B, machine.Pin.IN, machine.Pin.PULL_DOWN),
-    BUTTON_C: machine.Pin(BUTTON_C, machine.Pin.IN, machine.Pin.PULL_DOWN),
-    BUTTON_UP: machine.Pin(BUTTON_UP, machine.Pin.IN, machine.Pin.PULL_DOWN),
-}
+BUTTONS = dict([
+    (BUTTON_DOWN, machine.Pin(BUTTON_DOWN, machine.Pin.IN, machine.Pin.PULL_DOWN)),
+    (BUTTON_A, machine.Pin(BUTTON_A, machine.Pin.IN, machine.Pin.PULL_DOWN)),
+    (BUTTON_B, machine.Pin(BUTTON_B, machine.Pin.IN, machine.Pin.PULL_DOWN)),
+    (BUTTON_C, machine.Pin(BUTTON_C, machine.Pin.IN, machine.Pin.PULL_DOWN)),
+    (BUTTON_UP, machine.Pin(BUTTON_UP, machine.Pin.IN, machine.Pin.PULL_DOWN)),
+])
+
 
 WAKEUP_MASK = 0
 
 i2c = machine.I2C(0)
-rtc = pcf85063a.PCF85063A(i2c)
+rtc = pcf85063a.PCF85063A(i2c) # type: ignore
 i2c.writeto_mem(0x51, 0x00, b'\x00')  # ensure rtc is running (this should be default?)
 rtc.enable_timer_interrupt(False)
 
@@ -209,7 +210,7 @@ class Badger2040():
                 return True
         return False
 
-    @micropython.native
+    @micropython.native # type: ignore
     def icon(self, data, index, data_w, icon_size, x, y):
         s_x = (index * icon_size) % data_w
         s_y = int((index * icon_size) / data_w)
@@ -250,17 +251,20 @@ class Badger2040():
         import network
         return network.WLAN(network.STA_IF).ifconfig()[0]
 
-    def connect(self, **args):
+    def get_network_manager(self, status_handler=None):
         from network_manager import NetworkManager
         import WIFI_CONFIG
-        import uasyncio
-        import gc
-
-        status_handler = args.get("status_handler", self.status_handler)
 
         if WIFI_CONFIG.COUNTRY == "":
             raise RuntimeError("You must populate WIFI_CONFIG.py for networking.")
 
-        network_manager = NetworkManager(WIFI_CONFIG.COUNTRY, status_handler=status_handler)
+        return NetworkManager(WIFI_CONFIG.COUNTRY, status_handler=status_handler)
+
+    def connect(self, **args):
+        import WIFI_CONFIG
+        import uasyncio
+        import gc
+
+        network_manager = self.get_network_manager(args.get("status_handler", self.status_handler))
         uasyncio.get_event_loop().run_until_complete(network_manager.client(WIFI_CONFIG.SSID, WIFI_CONFIG.PSK))
         gc.collect()

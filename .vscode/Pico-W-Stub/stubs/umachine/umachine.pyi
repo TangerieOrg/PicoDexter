@@ -1853,7 +1853,7 @@ def lightsleep(time_ms: Optional[int] = None) -> None:
     ...
 
 
-def freq():
+def freq(freq : Optional[int] = None):
     """
     Returns CPU frequency in hertz.
     """
