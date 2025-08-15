@@ -62,7 +62,7 @@ class BLE:
     ---------
     """
 
-    def gatts_notify(self, value_handle: memoryview, data: bytes, /) -> None:
+    def gatts_notify(self, conn_handle: memoryview, value_handle: memoryview, data: bytes, /) -> None:
         """
         Sends a notification request to a connected client.
 

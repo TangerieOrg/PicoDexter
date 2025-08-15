@@ -8,29 +8,11 @@ import ntptime
 import random
 import network
 
+from display import *
+
 network.hostname("PicoDexter")
 network.country("TH")
 
-display = util.get_display()
-rotation = 180 if not display.pressed(badger2040.BUTTON_DOWN) else 0
-util.rotate_display(rotation)
-
-WIDTH, HEIGHT = (296, 128)
-FONT_SIZE = 2
-IS_DARK_MODE = False
-LOOP_SLEEP_SECONDS=60
-TIME_OFFSET = 10 * 60 * 60
-
-def set_pen(level : int):
-    display.set_pen((15 - level) if IS_DARK_MODE else level)
-
-def foreground(): set_pen(0)
-def background(): set_pen(15)
-
-def clear():
-    background()
-    display.clear()
-    foreground()
 
 def rjust(text, length : int, fill : str):
     text = str(text)
@@ -48,26 +30,10 @@ def dateToStr(d : tuple[int, int, int, int, int, int, int, int]):
 
 # for i, ap in enumerate(scan_aps()):
 #     display.text(ap, 10, 45 + i * 15, scale=1.5)
-display.set_font("bitmap8")
-display.set_update_speed(badger2040.UPDATE_MEDIUM)
 clear()
 display.update()
 
 display.set_update_speed(badger2040.UPDATE_TURBO)
-
-def progress_bar(thickness, perc):
-    foreground()
-    display.rectangle(5, HEIGHT // 2 - 15, WIDTH - 10, 30)
-    background()
-    max_w = WIDTH - 10 - thickness * 2
-    offX = int(perc * max_w)
-    display.rectangle(
-        5 + thickness + offX, 
-        HEIGHT // 2 - 15 + thickness, 
-        WIDTH - 10 - thickness * 2 - offX, 
-        30 - thickness * 2
-    )
-    foreground()
 
 i2c = machine.I2C(0)
 rtc = pcf85063a.PCF85063A(i2c) # type: ignore
@@ -80,13 +46,13 @@ if not was_connected:
     progress_bar(4, 0)    
     display.text("WiFi", 10, 10, 256, 4)
     import WIFI_CONFIG
-    display.text(f"SSID = {WIFI_CONFIG.SSID}", 10, HEIGHT // 2 + 15 + 5, scale=2)
+    display.text(f"SSID = {WIFI_CONFIG.SSID}", 10, config.HEIGHT // 2 + 15 + 5, scale=2)
     display.update()
 
     display.connect(status_handler=None)  # type: ignore
 
     progress_bar(4, 1/3)
-    display.text("IP = " + str(display.ip_address()), 10, HEIGHT // 2 + 45, scale=2)
+    display.text("IP = " + str(display.ip_address()), 10, config.HEIGHT // 2 + 45, scale=2)
     display.update()
 
     time.sleep(2)
@@ -112,7 +78,7 @@ display.set_update_speed(badger2040.UPDATE_FAST)
 
 def wait_loop():
     year, month, day, hour, minute, second, dow = rtc.datetime()
-    sec_since_epoch = time.mktime((year, month, day, hour, minute, second, dow, 0)) + LOOP_SLEEP_SECONDS + random.randint(-5, 5)
+    sec_since_epoch = time.mktime((year, month, day, hour, minute, second, dow, 0)) + config.LOOP_SLEEP_SECONDS + random.randint(-5, 5)
 
     (ayear, amonth, aday, ahour, aminute, asecond, adow, adoy) = time.localtime(sec_since_epoch)
 
@@ -124,7 +90,7 @@ def wait_loop():
 def text_center(text, size : float, y : int, fixed_width = False):
     text = str(text)
     w = display.measure_text(text, size, fixed_width=fixed_width)
-    display.text(text, int(WIDTH / 2 - w / 2), y, WIDTH, size, fixed_width=fixed_width)
+    display.text(text, int(config.WIDTH / 2 - w / 2), y, config.WIDTH, size, fixed_width=fixed_width)
     return w
 
 
@@ -157,7 +123,7 @@ def run(force_update=False):
 
     trend : str = data["trend"]
     value : float = data["value"]
-    date = time.localtime(int(data["date"] / 1000.0) + TIME_OFFSET)
+    date = time.localtime(int(data["date"] / 1000.0) + config.TIME_OFFSET)
 
     display.set_update_speed(badger2040.UPDATE_TURBO)
 
@@ -172,7 +138,7 @@ def run(force_update=False):
     
     last_run = data["date"]
     v_w = text_center(value, 5, 10)
-    display.text("mmol/L", int(WIDTH / 2 + v_w / 2) + 5, 30, WIDTH, 2)
+    display.text("mmol/L", int(config.WIDTH / 2 + v_w / 2) + 5, 30, config.WIDTH, 2)
     diff = value - last_value
     if last_value == 0:
         diff = 0
@@ -187,13 +153,8 @@ def run(force_update=False):
 
 while True:
     display.keepalive()
-    if __name__ != "__main__":
-        if display.pressed(badger2040.BUTTON_UP):
-            raise Exception("Test Exception")
-        elif display.pressed(badger2040.BUTTON_DOWN):
-            rotation = 180 if rotation == 0 else 0
-            util.rotate_display(rotation)
     run(force_update=display.pressed(badger2040.BUTTON_DOWN) or display.pressed(badger2040.BUTTON_B))
+    break
     wait_loop()
     display.halt()
 

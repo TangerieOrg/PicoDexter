@@ -190,7 +190,8 @@ class StringIO:
 
              This constructor is a MicroPython extension.
         """
-
+    def getvalue(self) -> str: ...
+    
 class BytesIO:
     @overload
     def __init__(self, string: bytes = b"", /):

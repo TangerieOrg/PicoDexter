@@ -82,7 +82,7 @@ def reset_pressed_to_wake():
     wakeup.reset_gpio_state()
 
 
-def pressed_to_wake_get_once(button):
+def pressed_to_wake_get_once(button) -> bool:
     global WAKEUP_MASK
     result = (wakeup.get_gpio_state() & ~WAKEUP_MASK & (1 << button)) > 0
     WAKEUP_MASK |= (1 << button)
@@ -201,7 +201,7 @@ class Badger2040():
     def keepalive(self):
         turn_on()
 
-    def pressed(self, button):
+    def pressed(self, button) -> bool:
         return BUTTONS[button].value() == 1 or pressed_to_wake_get_once(button)
 
     def pressed_any(self):

@@ -1,0 +1,1 @@
+https://github.com/peterhinch/micropython-async/blob/master/v3/docs/THREADING.md#4-taming-blocking-functions

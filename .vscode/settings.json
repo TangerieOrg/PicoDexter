@@ -9,4 +9,7 @@
     "python.analysis.typeshedPaths": [
         "./typings/"
     ],
+    "python.analysis.extraPaths": [
+        "./typings/"
+    ]
 }
