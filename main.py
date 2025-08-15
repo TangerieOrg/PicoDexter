@@ -2,6 +2,7 @@ import WIFI_CONFIG
 WIFI_CONFIG.configure()
 while True:
     try:
+        raise Exception("Test Exception")
         import program
     except Exception as e:
         import usys, io, util, badger2040
@@ -13,9 +14,13 @@ while True:
         display.set_font("bitmap8")
         display.set_update_speed(badger2040.UPDATE_MEDIUM)
 
-        buff = io.StringIO()
-        usys.print_exception(e, buff)
-        print(buff.getvalue())
+        import sys
+        import uio
+
+        buff = uio.StringIO()
+        sys.stderr = buff
+        usys.print_exception(e)
+
         display.set_pen(15)
         display.clear()
         display.set_pen(0)
@@ -23,6 +28,7 @@ while True:
         for i, line in enumerate(str(buff.getvalue()).split("\n")):
             display.text(line, 20, int(40 + i * 9 * 1.3), WIDTH - 40, 1.3)
         display.update()
+        raise e
         import gc
         gc.collect()
         import time

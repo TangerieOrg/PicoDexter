@@ -1,15 +1,12 @@
 {
-    "python.linting.enabled": true,
     "python.languageServer": "Pylance",
     "python.analysis.typeCheckingMode": "basic",
-    "micropico.syncFolder": "",
+    "python.analysis.diagnosticSeverityOverrides": {
+        "reportMissingModuleSource": "none"
+    },
+    "python.terminal.activateEnvironment": false,
     "micropico.openOnStart": true,
     "python.analysis.typeshedPaths": [
-        ".vscode\\Pico-W-Stub"
+        "./typings/"
     ],
-    "python.analysis.extraPaths": [
-        ".vscode\\Pico-W-Stub\\stubs",
-        "C:\\Users\\joshc\\AppData\\Roaming\\Python\\Python39\\site-packages",
-        ".vscode\\pimoroni-pico-stubs",
-    ]
 }
